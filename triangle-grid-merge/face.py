@@ -10,3 +10,7 @@ class Face:
         :param id: face's id.
         """
         self.Id = id
+
+        # Nodes and edges set clockwise.
+        self.nodes = list()
+        self.edges = list()

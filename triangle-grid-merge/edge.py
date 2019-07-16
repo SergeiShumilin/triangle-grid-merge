@@ -9,3 +9,5 @@ class Edge:
         :param id: edge's id.
         """
         self.Id = id
+        self.nodes = list()
+        self.faces = list()

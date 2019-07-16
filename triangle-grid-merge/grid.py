@@ -48,6 +48,130 @@ class Grid:
         for i in range(faces):
             self.Faces.append(Face(i))
 
+    def init_coordinates(self, xn, yn, x, y):
+        """
+        Initialize coordinates of the nodes inside the rectangular
+        set by x = (x1, x2), y = (y1, y2).
+
+        Coordinates are represented in memory so that elements in massives
+        lie in row-wise manner.
+
+        :param xn:
+        :param yn:
+        :param x: tuple (x1, x2): x-coord. of the rect.
+        :param y: tuple (y1, y2): y-coord. of the rect.
+        """
+        size_x = fabs(x[0] - x[1]) / (xn - 1)
+        size_y = fabs(y[0] - y[1]) / (yn - 1)
+
+        # Init coordinates.
+        for j in range(yn):
+            for i in range(xn):
+                self.Nodes[j * xn + i].x = i * size_x
+                self.Nodes[j * xn + i].y = j * size_y
+
+    def triangulation(self, xn, yn):
+        """
+        Make triangulation if the grid.
+
+                   nul(2)    eu     nur(3)
+              OX    *-------------*
+                    |fu          /|
+                    |          /  |
+                    |        /    |
+                  el|    ec/      |er
+                    |    /        |
+                    |  /          |
+                    |/          fd|
+                    *-------------*
+                   ndl(1)   ed     ndr(4)
+        """
+        sx = xn - 1
+        sy = yn - 1
+
+        ehn = sx * yn
+        evn = sy * xn
+
+        for i in range(sy):
+            for j in range(0, sx):
+
+                # Take two faces.
+                fu = self.Faces[2 * (j + i * sx)]
+                fd = self.Faces[2 * (j + i * sx) + 1]
+
+                # Take three nodes for fu.
+                nul = self.Nodes[i * xn + j]
+                nur = self.Nodes[i * xn + j + 1]
+                ndl = self.Nodes[(i + 1) * xn + j]
+                ndr = self.Nodes[(i + 1) * xn + j + 1]
+
+                # Edges.
+                eu = self.Edges[i * sx + j]
+                ed = self.Edges[(i + 1) * sx + j]
+                el = self.Edges[ehn + i * xn + j]
+                er = self.Edges[ehn + i * xn + j + 1]
+                ec = self.Edges[ehn + evn + i * sx + j]
+
+                # Link nodes and face 1.
+                self.link_face_and_node(fu, nul)
+                self.link_face_and_node(fu, ndl)
+                self.link_face_and_node(fu, nur)
+
+                # Link nodes and face 2.
+                self.link_face_and_node(fd, ndr)
+                self.link_face_and_node(fd, nur)
+                self.link_face_and_node(fd, ndl)
+
+                # Link node and edges.
+                self.link_node_and_edge(nul, eu)
+                self.link_node_and_edge(nur, eu)
+                self.link_node_and_edge(nul, el)
+                self.link_node_and_edge(ndl, el)
+                self.link_node_and_edge(nur, ec)
+                self.link_node_and_edge(ndl, ec)
+
+                # For the bottom row of squares we add nodes in to the
+                # bottom edge.
+                if i == sy - 1:
+                    self.link_node_and_edge(ndl, ed)
+                    self.link_node_and_edge(ndr, ed)
+
+                # For the right column of squares we add nodes in to the
+                # right edge.
+                if j == sx - 1:
+                    self.link_node_and_edge(nur, er)
+                    self.link_node_and_edge(ndr, er)
+
+    @staticmethod
+    def link_face_and_node(f, n):
+        """
+        Link node and face.
+        :param n: node.
+        :param f: face.
+        """
+        n.faces.append(f)
+        f.nodes.append(n)
+
+    @staticmethod
+    def link_node_and_edge(n, e):
+        """
+        Link node and edge.
+        :param n: node.
+        :param e: edge.
+        """
+        n.edges.append(e)
+        e.nodes.append(n)
+
+    @staticmethod
+    def link_face_and_edge(f, e):
+        """
+        Link face and edge.
+        :param f: face.
+        :param e: edge.
+        """
+        f.edges.append(e)
+        e.faces.append(f)
+
     @staticmethod
     def number_of_edges(xn, yn):
         """
@@ -77,25 +201,3 @@ class Grid:
         :return: number of faces
         """
         return 2 * (xn - 1) * (yn - 1)
-
-    def init_coordinates(self, xn, yn, x, y):
-        """
-        Initialize coordinates of the nodes inside the rectangular
-        set by x = (x1, x2), y = (y1, y2).
-
-        Coordinates are represented in memory so that elements in massives
-        lie in row-wise manner.
-
-        :param xn:
-        :param yn:
-        :param x: tuple (x1, x2): x-coord. of the rect.
-        :param y: tuple (y1, y2): y-coord. of the rect.
-        """
-        size_x = fabs(x[0] - x[1]) / (xn - 1)
-        size_y = fabs(y[0] - y[1]) / (yn - 1)
-
-        # Init coordinates.
-        for j in range(yn):
-            for i in range(xn):
-                self.Nodes[j * xn + i].x = i * size_x
-                self.Nodes[j * xn + i].y = j * size_y

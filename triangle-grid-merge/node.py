@@ -13,3 +13,6 @@ class Node:
         self.Id = id
         self.x = None
         self.y = None
+
+        self.faces = list()
+        self.edges = list()
