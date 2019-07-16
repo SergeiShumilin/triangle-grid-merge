@@ -11,3 +11,5 @@ class Node:
         :param id: node's id in the grid.
         """
         self.Id = id
+        self.x = None
+        self.y = None
