@@ -11,9 +11,19 @@ def print_tecplot(grid):
     with open('grids/grid.dat', 'w+') as f:
         f.write('TITLE = "GRID"\n')
         f.write('VARIABLES = "X", "Y"\n')
-        f.write('ZONE T = "GRID 1"\n')
-        f.write('NODES = ' + str(len(grid.Nodes)) + '\n')
-        f.write('ELEMENTS = ' + str(len(grid.Faces)) + '\n')
+
+    add_tecplot_zone(grid, 'ZON1 1')
+
+
+def add_tecplot_zone(grid, zone_name):
+    """
+    Add grid as a zone to "grid/grid.dat".
+    :param grid: Grid object.
+    """
+    with open('grids/grid.dat', 'a+') as f:
+        f.write('ZONE T = "{}"\n'.format(zone_name))
+        f.write('NODES = {}\n'.format((len(grid.Nodes))))
+        f.write('ELEMENTS = {}\n'.format((len(grid.Faces))))
         f.write('DATAPACKING = BLOCK\n')
         f.write('ZONETYPE = FETRIANGLE\n')
 
