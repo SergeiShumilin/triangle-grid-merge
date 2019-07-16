@@ -18,6 +18,7 @@ def print_tecplot(grid):
 def add_tecplot_zone(grid, zone_name):
     """
     Add grid as a zone to "grid/grid.dat".
+    :param zone_name: name for the zone.
     :param grid: Grid object.
     """
     with open('grids/grid.dat', 'a+') as f:
@@ -30,7 +31,9 @@ def add_tecplot_zone(grid, zone_name):
         # Variables' values.
         for node in grid.Nodes:
             f.write(str(node.x) + ' ')
+
         f.write('\n')
+
         for node in grid.Nodes:
             f.write(str(node.y) + ' ')
         f.write('\n')
