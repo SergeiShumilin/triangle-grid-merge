@@ -1,5 +1,6 @@
 """Module describing grid's edge."""
 
+
 class Edge:
     __doc__ = "Module describing grid's edge."
 

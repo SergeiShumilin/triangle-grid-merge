@@ -1,7 +1,7 @@
 """Module describes triangular grid."""
-from .node import Node
-from .edge import Edge
-from .face import Face
+from node import Node
+from edge import Edge
+from face import Face
 from math import fabs
 
 
@@ -23,11 +23,15 @@ class Grid:
         self.Edges = list()
         self.Nodes = list()
 
-        num_nodes = self.number_of_edges(xn, yn)
+        num_nodes = self.number_of_nodes(xn, yn)
         num_edges = self.number_of_edges(xn, yn)
         num_faces = self.number_of_faces(xn, yn)
 
         self.init_element_arrays(num_nodes, num_edges, num_faces)
+
+        self.init_coordinates(xn, yn, x, y)
+
+        self.triangulation(xn, yn)
 
     def init_element_arrays(self, nodes, edges, faces):
         """
@@ -67,14 +71,14 @@ class Grid:
         # Init coordinates.
         for j in range(yn):
             for i in range(xn):
-                self.Nodes[j * xn + i].x = i * size_x
-                self.Nodes[j * xn + i].y = j * size_y
+                self.Nodes[j * xn + i].x = x[0] + i * size_x
+                self.Nodes[j * xn + i].y = y[0] + j * size_y
 
     def triangulation(self, xn, yn):
         """
-        Make triangulation if the grid.
+        Make triangulation of the grid.
 
-                   nul(2)    eu     nur(3)
+                   nul    eu     nur
               OX    *-------------*
                     |fu          /|
                     |          /  |
@@ -84,7 +88,7 @@ class Grid:
                     |  /          |
                     |/          fd|
                     *-------------*
-                   ndl(1)   ed     ndr(4)
+                   ndl   ed     ndr
         """
         sx = xn - 1
         sy = yn - 1

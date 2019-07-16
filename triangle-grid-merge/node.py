@@ -2,7 +2,6 @@
 
 
 class Node:
-
     __doc__ = "class discribing node"
 
     def __init__(self, id):
