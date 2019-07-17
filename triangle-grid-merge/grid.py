@@ -8,27 +8,33 @@ from math import fabs
 class Grid:
     __doc__ = "Class describing triangular grid"
 
-    def __init__(self, xn, yn, x, y):
+    def __init__(self):
         """
         Grid constructor.
+        """
+        self.Faces = list()
+        self.Edges = list()
+        self.Nodes = list()
 
+    def init(self, xn, yn, x, y):
+        """
         The initialization of the grid is done in the next steps:
 
-        1. Calculate the number of nodes, faces and edges basing on
-        the number of points by axis.
+            1. Calculate the number of nodes, faces and edges basing on
+            the number of points by axis.
 
-        2. Initialize the elements' ids.
+            2. Initialize the elements' ids.
 
-        3. Initialize the coordinates of nodes basing on the given
-        coordinates of rectangular to put the grid inside it.
+            3. Initialize the coordinates of nodes basing on the given
+            coordinates of rectangular to put the grid inside it.
 
-                     +--------o (x2, y2)
-                     |        |
-                     |        |
-                     |        |
-            (x1, y1) o--------+
+                         +--------o (x2, y2)
+                         |        |
+                         |        |
+                         |        |
+                (x1, y1) o--------+
 
-        4. Triangulate the grid.
+            4. Triangulate the grid.
 
         :param xn: number of points by x-axis.
         :param yn: number of points by y-axis.
@@ -39,10 +45,6 @@ class Grid:
         assert yn > 1, "The number of points should be more than one."
         assert x[0] < x[1], 'The second point should be x1 < x2'
         assert y[0] < y[1], 'The second point should be y1 < y2'
-
-        self.Faces = list()
-        self.Edges = list()
-        self.Nodes = list()
 
         num_nodes = self.number_of_nodes(xn, yn)
         num_edges = self.number_of_edges(xn, yn)
