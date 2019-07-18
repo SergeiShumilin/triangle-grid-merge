@@ -54,7 +54,22 @@ class Grid:
 
         self.init_coordinates(xn, yn, x, y)
 
+        self.init_ids()
+
         self.triangulation(xn, yn)
+
+    def init_ids(self):
+        """
+        Initialize ids of the elements.
+        """
+        for i, node in enumerate(self.Nodes):
+            node.Id = i
+
+        for i, edge in enumerate(self.Edges):
+            edge.Id = i
+
+        for i, face in enumerate(self.Faces):
+            face.Id = i
 
     def init_element_arrays(self, nodes, edges, faces):
         """
@@ -65,15 +80,15 @@ class Grid:
         """
         # Initialize nodes' Ids.
         for i in range(nodes):
-            self.Nodes.append(Node(i))
+            self.Nodes.append(Node())
 
-        # Initialize edges' Ids.
+        # Initialize nodes' Ids.
         for i in range(edges):
-            self.Edges.append(Edge(i))
+            self.Edges.append(Edge())
 
         # Initialize faces' Ids.
         for i in range(faces):
-            self.Faces.append(Face(i))
+            self.Faces.append(Face())
 
     def init_coordinates(self, xn, yn, x, y):
         """
@@ -228,3 +243,19 @@ class Grid:
         :return: number of faces
         """
         return 2 * (xn - 1) * (yn - 1)
+
+    def is_edge_present(self, n1, n2):
+        """
+        Whether the `grid.Edges` contains the edge with nodes n1 and n2.
+        :param n1: node 1.
+        :param n2: node 2.
+        :return: id of the edge if present and None if not.
+        """
+        for id, edge in enumerate(self.Edges):
+
+            if len(edge.nodes) > 0:
+                cond1 = edge.nodes[0] == n1 and edge.nodes[1] == n2
+                cond2 = edge.nodes[0] == n2 and edge.nodes[1] == n1
+                if cond1 or cond2:
+                    return id
+        return None
