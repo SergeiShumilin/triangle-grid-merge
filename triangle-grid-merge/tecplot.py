@@ -5,6 +5,7 @@ from node import Node
 from face import Face
 from edge import Edge
 from grid import Grid
+from zone import Zone
 from math import fabs
 
 # Accuracy to compare nodes' coordinates.
@@ -18,9 +19,7 @@ def print_tecplot(grid, filename):
     :param filename: file to write in.
     :param grid: Grid object.
     """
-    with open('grids/{}'.format(filename), 'w') as f:
-        f.write('TITLE = "GRID"\n')
-        f.write('VARIABLES = "X", "Y"\n')
+    print_tecplot_header(filename)
 
     print_tecplot_zone(grid, filename, 'ZON1 1')
 
@@ -29,32 +28,15 @@ def print_tecplot_zone(grid, filename, zone_name):
     """
     Add grid as a zone to "grid/grid.dat".
 
+    :param grid: Grid or Zone object.
     :param filename: file to write in.
     :param zone_name: name for the zone.
-    :param grid: Grid object.
     """
-    with open('grids/{}'.format(filename), 'a+') as f:
-        f.write('ZONE T = "{}"\n'.format(zone_name))
-        f.write('NODES = {}\n'.format((len(grid.Nodes))))
-        f.write('ELEMENTS = {}\n'.format((len(grid.Faces))))
-        f.write('DATAPACKING = BLOCK\n')
-        f.write('ZONETYPE = FETRIANGLE\n')
+    print_zone_header(filename, zone_name, grid.Nodes, grid.Faces)
 
-        # Variables' values.
-        for node in grid.Nodes:
-            f.write(str(node.x) + ' ')
+    print_variables(filename, grid.Nodes)
 
-        f.write('\n')
-
-        for node in grid.Nodes:
-            f.write(str(node.y) + ' ')
-        f.write('\n')
-
-        # Connectivity list.
-        for face in grid.Faces:
-            for node in face.nodes:
-                f.write(str(node.Id + 1) + ' ')
-            f.write('\n')
+    print_connectivity_list(filename, grid.Faces)
 
 
 def read_tecplot(filename):
@@ -337,3 +319,66 @@ def number_of_faces(line):
     :return: int number of nodes.
     """
     return int(line[line.find('ELEMENTS =') + 10: len(line)])
+
+
+def print_tecplot_header(filename):
+    """
+    Write tecplot header containing the information
+    about Title and number of variables.
+
+    :param filename: file to write in.
+    """
+    with open('grids/{}'.format(filename), 'w') as f:
+        f.write('TITLE = "GRID"\n')
+        f.write('VARIABLES = "X", "Y"\n')
+
+
+def print_zone_header(filename, zone_name, nodes, faces):
+    """
+    Write information about zone into the file.
+
+    :param filename: file to write in.
+    :param zone_name: name of the zone.
+    :param nodes: nodes.
+    :param faces: faces.
+    """
+    with open('grids/{}'.format(filename), 'a+') as f:
+        f.write('ZONE T = "{}"\n'.format(zone_name))
+        f.write('NODES = {}\n'.format((len(nodes))))
+        f.write('ELEMENTS = {}\n'.format((len(faces))))
+        f.write('DATAPACKING = BLOCK\n')
+        f.write('ZONETYPE = FETRIANGLE\n')
+
+
+def print_variables(filename, nodes):
+    """
+    Write variables values in tecplot file.
+
+    :param filename: file to write in.
+    :param nodes: nodes containing values.
+    """
+    with open('grids/{}'.format(filename), 'a+') as f:
+        # Variables' values.
+        for node in nodes:
+            f.write(str(node.x) + ' ')
+
+        f.write('\n')
+
+        for node in nodes:
+            f.write(str(node.y) + ' ')
+        f.write('\n')
+
+
+def print_connectivity_list(filename, faces):
+    """
+    Write tecplot connectivity list.
+
+    :param filename: file to write in.
+    :param faces: faces with nodes.
+    """
+    with open('grids/{}'.format(filename), 'a+') as f:
+        # Connectivity list.
+        for face in faces:
+            for node in face.nodes:
+                f.write(str(node.Id + 1) + ' ')
+            f.write('\n')

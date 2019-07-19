@@ -15,6 +15,7 @@ class Grid:
         self.Faces = list()
         self.Edges = list()
         self.Nodes = list()
+        self.Zones = list()
 
     def init(self, xn, yn, x, y):
         """
