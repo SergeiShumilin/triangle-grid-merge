@@ -251,11 +251,11 @@ class Grid:
         :param n2: node 2.
         :return: id of the edge if present and None if not.
         """
-        for id, edge in enumerate(self.Edges):
+        for edge in self.Edges:
 
             if len(edge.nodes) > 0:
                 cond1 = edge.nodes[0] == n1 and edge.nodes[1] == n2
                 cond2 = edge.nodes[0] == n2 and edge.nodes[1] == n1
                 if cond1 or cond2:
-                    return id
+                    return edge
         return None
