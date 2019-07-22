@@ -2,6 +2,7 @@
 from node import Node
 from edge import Edge
 from face import Face
+from zone import Zone
 from math import fabs
 
 
@@ -26,7 +27,10 @@ class Grid:
 
             2. Initialize the elements' ids.
 
-            3. Initialize the coordinates of nodes basing on the given
+            3. Initialize Zone 1 - make all nodes and faces belong to zone 1
+            of the grid.
+
+            4. Initialize the coordinates of nodes basing on the given
             coordinates of rectangular to put the grid inside it.
 
                          +--------o (x2, y2)
@@ -35,7 +39,7 @@ class Grid:
                          |        |
                 (x1, y1) o--------+
 
-            4. Triangulate the grid.
+            5. Triangulate the grid.
 
         :param xn: number of points by x-axis.
         :param yn: number of points by y-axis.
@@ -52,6 +56,8 @@ class Grid:
         num_faces = self.number_of_faces(xn, yn)
 
         self.init_element_arrays(num_nodes, num_edges, num_faces)
+
+        self.init_zone()
 
         self.init_coordinates(xn, yn, x, y)
 
@@ -99,8 +105,8 @@ class Grid:
         Coordinates are represented in memory so that elements in massives
         lie in row-wise manner.
 
-        :param xn:
-        :param yn:
+        :param xn: number of points by x-axis.
+        :param yn: number of points by y-axis.
         :param x: tuple (x1, x2): x-coord. of the rect.
         :param y: tuple (y1, y2): y-coord. of the rect.
         """
@@ -112,6 +118,17 @@ class Grid:
             for i in range(xn):
                 self.Nodes[j * xn + i].x = x[0] + i * size_x
                 self.Nodes[j * xn + i].y = y[0] + j * size_y
+
+    def init_zone(self):
+        """
+        Init zone 1 of grid.
+
+        Makes all elements of the grid belong to zone 1.
+        """
+        z = Zone()
+        z.Nodes = self.Nodes
+        z.Faces = self.Faces
+        self.Zones.append(z)
 
     def triangulation(self, xn, yn):
         """

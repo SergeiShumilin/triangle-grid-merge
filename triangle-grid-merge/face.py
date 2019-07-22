@@ -13,4 +13,5 @@ class Face:
 
         # Nodes and edges set clockwise.
         self.nodes = list()
+        self.nodes_ids = list()
         self.edges = list()

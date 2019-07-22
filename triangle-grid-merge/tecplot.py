@@ -9,190 +9,211 @@ from zone import Zone
 from math import fabs
 
 # Accuracy to compare nodes' coordinates.
-EPS = 10e-7
+EPS = 10e-5
 
 
-def print_tecplot(grid, filename):
+def print_tecplot(grid, filename, merge=False):
     """
-    Create tecplot file (.dat) with grid.
+    Write grid containing multiple zones to the file.
 
-    :param filename: file to write in.
     :param grid: Grid object.
+    :param filename: file to write in.
+    :param merge: (bool) whether to merge grid.
+    Use ids of the nodes in grid.Nodes instead of zone.Nodes.
+    And the ids of faces from grid.Faces instead of zone.Faces.
+    I.e. continuing numbering through the grid.
     """
     print_tecplot_header(filename)
 
-    print_tecplot_zone(grid, filename, 'ZON1 1')
+    if merge:
+        print_merged_grid(grid, filename)
+    else:
+        print_zones(grid, filename)
 
 
-def print_tecplot_zone(grid, filename, zone_name):
+def print_zones(grid, filename):
     """
-    Add grid as a zone to "grid/grid.dat".
+    Print grid's zones to the filename.
 
-    :param grid: Grid or Zone object.
+    Warning! if you use this function to add zones
+    to the existing tecplot file already containing zones
+    then the numeration of zone titles should be handled manually.
+
+    :param grid: Grid object.
+    :param filename: file to plot zones in.
+    """
+    for i, z in enumerate(grid.Zones):
+        print_zone_header(filename, 'ZONE {}'.format(i + 1), z.Nodes, z.Faces)
+
+        print_variables(filename, z.Nodes)
+
+        print_connectivity_list(filename, z.Nodes, z.Faces)
+
+
+def print_merged_grid(grid, filename):
+    """
+    Merge all zones and print the grid as single zone.
+
+    Use continuous numbering of nodes and faces through the grid
+     instead of their position zone-wise.
+
+    :param grid: Grid object.
     :param filename: file to write in.
-    :param zone_name: name for the zone.
     """
-    print_zone_header(filename, zone_name, grid.Nodes, grid.Faces)
+    assert len(grid.Zones) > 1, '\nGrid is not multizone.\n'
+
+    print_zone_header(filename, 'ZONE 1', grid.Nodes, grid.Faces)
 
     print_variables(filename, grid.Nodes)
 
-    print_connectivity_list(filename, grid.Faces)
+    print_connectivity_list(filename, grid.Nodes, grid.Faces)
 
 
-def read_tecplot(filename):
-    """
-    Read tecplot file (.dat) and create a grid.
-
-    If tecplot file contains several zones than merge them into
-    single grid.
-
-    :param filename: file to read from.
-    :param grid: Grid object to import in.
-    :return: Grid object.
-    """
-    grid = Grid()
-
+def read_tecplot(grid, filename):
     file_with_grid = open('grids/{}'.format(filename), 'r')
 
     lines = file_with_grid.readlines()
 
-    # Number of times the word ZONE occurs in the file.
-    nzones = number_of_zones(lines)
+    nodes_count = list()
+    faces_count = list()
+    indexes = list()
 
-    # Number of nodes.
-    nnodes = number_of_nodes(lines[3])
+    for i, line in enumerate(lines):
+        if line.find('NODES =') != -1:
+            nodes_count.append(number_of_nodes(line))
+        if line.find('ELEMENTS =') != -1:
+            faces_count.append(number_of_faces(line))
 
-    # Number of faces.
-    nfaces = number_of_faces(lines[4])
+            # +3 is the correction to start from the line
+            # where the variables start.
+            indexes.append(i + 3)
 
-    # Number of edges.
-    nedges = 2 * nfaces + 1
+    assert len(nodes_count) == len(faces_count), '\nTecplot file is incomplete.\n'
 
-    # Create arrays of elements in the grid.
-    for i in range(nnodes):
-        grid.Nodes.append(Node())
+    nodes = list()
+    faces = list()
 
-    for i in range(nedges):
-        grid.Edges.append(Edge())
+    for n, f, i in zip(nodes_count, faces_count, indexes):
+        # Create a zone.
+        z = Zone()
+        grid.Zones.append(z)
 
-    # If ELEMENTS is found then we can count two lines down the file
-    # and start read the variables values.
-    # X-coord.
+        # Return nodes and faces for the zone.
+        parced = parce_nodes(lines[i: i + 2 + f])
+        parces_nodes = parced[0]
+        parces_faces = parced[1]
+        nodes.append(parces_nodes)
+        faces.append(parces_faces)
 
-    for node_id, x in enumerate(map(float, lines[7].split(' ')[:-1])):
-        grid.Nodes[node_id].x = x
+        z.Nodes = parces_nodes
+        z.Faces = parces_faces
 
-    # Y-coord.
-    for node_id, y in enumerate(map(float, lines[8].split(' ')[:-1])):
-        grid.Nodes[node_id].y = y
+    compose_nodes(grid, nodes)
 
-    # cl_line - connectivity list line.
-    connections(grid, lines[9: 9 + nfaces], grid.Nodes, grid.Faces)
-
-    file_with_grid.close()
+    for f, n in zip(faces, nodes):
+        compose_faces(grid, n, f)
+        grid.Faces += f
 
     # Init new elements' ids.
     grid.init_ids()
 
-    return grid
+
+def compose_nodes(grid, nodes):
+    # Copy all nodes from zone 1 to the grid.
+    grid.Nodes = [node for node in nodes[0]]
+
+    for n in nodes[1:]:
+        compose_node_list_algorithm_1(grid, n)
 
 
-def read_multizone_tecplot(filename):
+def compose_faces(grid, nodes, faces):
     """
-    Read tecplot file with two zones and create a grid.
+    Link faces and nodes according to the connectivity list.
 
-    Merging of two zones is accomplished in the next steps:
+    1 2 3  -> Face 1
+    2 3 4  -> Face 2
 
-    1. Read x, y coordinates of the nodes.
+    Also, edges are created and linked basing on their presence in grid.Edge.
 
-    2. Create node lists for each zone.
-
-    3. Compose grid's node list avoiding repeating nodes.
-
-    4. Link faces, nodes and create edges for each zone.
-
-        Since links in the second zone node list when performing step 2
-        share links to nodes with links from node list of zone 1, faces
-        link to the correct objects because they point to the ids of the
-        nodes.
-
-    5. Both faces lists become grid's Faces.
-
-    :param filename: file to read from.
-    :return: Grid object.
+    :param grid: Grid object.
+    :param nodes: list : nodes to connect.
+    :param faces: list : to connect (must be empty).
     """
-    grid = Grid()
+    for f in faces:
+        n1 = nodes[f.nodes_ids[0] - 1]
+        n2 = nodes[f.nodes_ids[1] - 1]
+        n3 = nodes[f.nodes_ids[2] - 1]
 
-    file_with_grid = open('grids/{}'.format(filename), 'r')
+        # Link face and nodes.
+        Grid.link_face_and_node(f, n1)
+        Grid.link_face_and_node(f, n2)
+        Grid.link_face_and_node(f, n3)
 
-    lines = file_with_grid.readlines()
+        # Link faces, nodes and edges.
+        e = grid.is_edge_present(n1, n2)
+        if e is None:
+            e = Edge()
+            grid.link_face_and_edge(f, e)
+            grid.link_node_and_edge(n1, e)
+            grid.link_node_and_edge(n2, e)
+            grid.Edges.append(e)
+        else:
+            grid.link_face_and_edge(f, e)
 
-    # Number of times the word ZONE occurs in the file.
-    nzones = number_of_zones(lines)
+        e = grid.is_edge_present(n2, n3)
+        if e is None:
+            e = Edge()
+            grid.link_face_and_edge(f, e)
+            grid.link_node_and_edge(n2, e)
+            grid.link_node_and_edge(n3, e)
+            grid.Edges.append(e)
+        else:
+            grid.link_face_and_edge(f, e)
 
-    # Number of faces of zone 1.
-    nfaces_z1 = number_of_faces(lines[4])
+        e = grid.is_edge_present(n3, n1)
+        if e is None:
+            e = Edge()
+            grid.link_face_and_edge(f, e)
+            grid.link_node_and_edge(n3, e)
+            grid.link_node_and_edge(n1, e)
+            grid.Edges.append(e)
+        else:
+            grid.link_face_and_edge(f, e)
 
-    # Number of faces in zone 2  expressed by number of elements in zone 1.
-    nfaces_z2 = number_of_faces(lines[11 + nfaces_z1])
 
+def parce_nodes(lines):
     # Read all nodes of zone 1.
     # x coords.
-    xs_z1 = map(float, lines[7].split(' ')[:-1])
+    xs = map(float, lines[0].split(' ')[:-1])
     # y coords.
-    ys_z1 = map(float, lines[8].split(' ')[:-1])
+    ys = map(float, lines[1].split(' ')[:-1])
 
     # Nodes of zone 1.
-    nodes_z1 = list()
+    nodes = list()
 
     # Initialize node array for zone 1.
-    for x, y in zip(xs_z1, ys_z1):
+    for x, y in zip(xs, ys):
         n = Node()
         n.x = x
         n.y = y
-        nodes_z1.append(n)
+        nodes.append(n)
 
-    del xs_z1
-    del ys_z1
+    del xs
+    del ys
 
-    # Read all nodes of zone 2.
-    # x coords.
-    xs_z2 = map(float, lines[14 + nfaces_z1].split(' ')[:-1])
-    # y coords.
-    ys_z2 = map(float, lines[15 + nfaces_z1].split(' ')[:-1])
+    faces = list()
 
-    nodes_z2 = list()
+    for line in lines[2:]:
+        f = Face()
+        ids = line.split(' ')[:-1]
+        ids = list(map(int, ids))
+        f.nodes_ids = ids
+        faces.append(f)
 
-    # Initialize node array for zone 1.
-    for x, y in zip(xs_z2, ys_z2):
-        n = Node()
-        n.x = x
-        n.y = y
-        nodes_z2.append(n)
-
-    del xs_z2
-    del ys_z2
-
-    compose_node_list_algorithm_1(grid, nodes_z1, nodes_z2)
-
-    # Now create two faces arrays.
-    faces_z1 = list()
-    connections(grid, lines[9: 9 + nfaces_z1], nodes_z1, faces_z1)
-
-    faces_z2 = list()
-    connections(grid, lines[16 + nfaces_z1: 16 + nfaces_z1 + nfaces_z2], nodes_z2, faces_z2)
-
-    grid.Faces = faces_z1 + faces_z2
-
-    file_with_grid.close()
-
-    # Init new elements' ids.
-    grid.init_ids()
-
-    return grid
+    return nodes, faces
 
 
-def compose_node_list_algorithm_1(grid, nodes_z1, nodes_z2):
+def compose_node_list_algorithm_1(grid, nodes_z2):
     """
     Compose grid.Nodes from the nodes from two zones to avoid repeating.
 
@@ -200,24 +221,20 @@ def compose_node_list_algorithm_1(grid, nodes_z1, nodes_z2):
     The algorithm does simple n^2 search through all nodes.
 
     :param grid: Grid object.
-    :param nodes_z1: list: nodes of zone 1.
     :param nodes_z2: list: nodes of zone 2.
     """
-    # Copy all nodes from zone 1 to the grid.
-    grid.Nodes = [node for node in nodes_z1]
-
     for i in range(len(nodes_z2)):
 
         node_is_found = False
 
-        for j in range(len(nodes_z1)):
+        for j in range(len(grid.Nodes)):
 
             # Compare coordinates.
-            cond1 = fabs(nodes_z1[j].x - nodes_z2[i].x) <= EPS
-            cond2 = fabs(nodes_z1[j].y - nodes_z2[i].y) <= EPS
+            cond1 = fabs(grid.Nodes[j].x - nodes_z2[i].x) <= EPS
+            cond2 = fabs(grid.Nodes[j].y - nodes_z2[i].y) <= EPS
 
             if cond1 and cond2:
-                nodes_z2[i] = nodes_z1[j]
+                nodes_z2[i] = grid.Nodes[j]
                 node_is_found = True
                 break
 
@@ -298,7 +315,7 @@ def number_of_zones(file):
     :param file: file to read.
     :return: number of zones.
     """
-    return ' '.join(file).count('ZONE')
+    return ' '.join(file).count('ZONE T')
 
 
 def number_of_nodes(line):
@@ -369,7 +386,7 @@ def print_variables(filename, nodes):
         f.write('\n')
 
 
-def print_connectivity_list(filename, faces):
+def print_connectivity_list(filename, nodes, faces):
     """
     Write tecplot connectivity list.
 
@@ -380,5 +397,5 @@ def print_connectivity_list(filename, faces):
         # Connectivity list.
         for face in faces:
             for node in face.nodes:
-                f.write(str(node.Id + 1) + ' ')
+                f.write(str(nodes.index(node) + 1) + ' ')
             f.write('\n')
