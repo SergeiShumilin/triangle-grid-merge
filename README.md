@@ -37,7 +37,8 @@ If the grid is multizone you can print it as a single zone giving:
 ```
 print_tecplot(grid, 'name.dat', merge=True)
 ```
-IMAGE 1
+![threezones](docs/threezones.png)
+![threezones](docs/singlezone.png)
 
 To **read** a grid. use
 ```
@@ -48,5 +49,6 @@ read_tecplot(grid, 'name.dat')
 ## Details
 
 Triangular grid is the one where each face is set by three nodes.
-IMAGE2
+![grid_view](docs/grid_view.png)
+
 

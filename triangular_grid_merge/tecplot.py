@@ -1,11 +1,11 @@
 """
 Module provides interaction with tecplot format.
 """
-from node import Node
-from face import Face
-from edge import Edge
-from grid import Grid
-from zone import Zone
+from .node import Node
+from .face import Face
+from .edge import Edge
+from .grid import Grid
+from .zone import Zone
 from math import fabs
 
 # Accuracy to compare nodes' coordinates.
