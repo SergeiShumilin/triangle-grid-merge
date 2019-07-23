@@ -40,6 +40,7 @@ print_tecplot(grid, 'name.dat', merge=True)
 ![threezones](docs/threezones.png)
 ![threezones](docs/singlezone.png)
 
+
 To **read** a grid. use
 ```
 from triangular_grid_merge.tecplot import read_tecplot
@@ -48,7 +49,8 @@ read_tecplot(grid, 'name.dat')
 
 ## Details
 
-Triangular grid is the one where each face is set by three nodes.
+Triangular grid is the one where each face is set by three nodes. 
+It consists of nodes, faces and edges.
 ![grid_view](docs/grid_view.png)
 
 

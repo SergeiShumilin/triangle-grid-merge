@@ -1,6 +1,5 @@
-from grid import Grid
-from tecplot import read_tecplot
-from tecplot import print_tecplot
+from triangular_grid_merge.grid import Grid
+from triangular_grid_merge.tecplot import *
 
 # grid = Grid()
 # grid.init(4, 5, (0, 60), (0, 100))
