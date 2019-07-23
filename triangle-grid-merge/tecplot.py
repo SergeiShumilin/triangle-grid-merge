@@ -70,17 +70,22 @@ def print_merged_grid(grid, filename):
 
 
 def read_tecplot(grid, filename):
+    """
+    Read tecplot file.
+
+    :param grid: Grid object.
+    :param filename: file to read from.
+    """
     file_with_grid = open('grids/{}'.format(filename), 'r')
 
     lines = file_with_grid.readlines()
 
-    nodes_count = list()
     faces_count = list()
     indexes = list()
 
+    # Find and remember all ELEMENTS words in the file.
+    # They design a start of zone.
     for i, line in enumerate(lines):
-        if line.find('NODES =') != -1:
-            nodes_count.append(number_of_nodes(line))
         if line.find('ELEMENTS =') != -1:
             faces_count.append(number_of_faces(line))
 
@@ -88,37 +93,44 @@ def read_tecplot(grid, filename):
             # where the variables start.
             indexes.append(i + 3)
 
-    assert len(nodes_count) == len(faces_count), '\nTecplot file is incomplete.\n'
-
+    # List of lists of nodes for each zone.
     nodes = list()
+    # List of lists of faces for each zone.
     faces = list()
 
-    for n, f, i in zip(nodes_count, faces_count, indexes):
+    # Extract each zone from certain lines using indexes of lines
+    # obtained earlier.
+    for f, i in zip(faces_count, indexes):
         # Create a zone.
         z = Zone()
         grid.Zones.append(z)
 
-        # Return nodes and faces for the zone.
-        parced = parce_nodes(lines[i: i + 2 + f])
-        parces_nodes = parced[0]
-        parces_faces = parced[1]
+        # Return nodes and faces for the zone
+        # by parcing the file.
+        parces_nodes, parces_faces = parce_nodes_and_faces(lines[i: i + 2 + f])
         nodes.append(parces_nodes)
         faces.append(parces_faces)
 
         z.Nodes = parces_nodes
         z.Faces = parces_faces
 
-    compose_nodes(grid, nodes)
+    set_nodes(grid, nodes)
 
     for f, n in zip(faces, nodes):
-        compose_faces(grid, n, f)
+        set_faces(grid, n, f)
         grid.Faces += f
 
     # Init new elements' ids.
     grid.init_ids()
 
 
-def compose_nodes(grid, nodes):
+def set_nodes(grid, nodes):
+    """
+    Fill grid.Nodes list with unique nodes from each zone.
+
+    :param grid: Grid object.
+    :param nodes: list of lists of nodes for each zone.
+    """
     # Copy all nodes from zone 1 to the grid.
     grid.Nodes = [node for node in nodes[0]]
 
@@ -126,7 +138,7 @@ def compose_nodes(grid, nodes):
         compose_node_list_algorithm_1(grid, n)
 
 
-def compose_faces(grid, nodes, faces):
+def set_faces(grid, nodes, faces):
     """
     Link faces and nodes according to the connectivity list.
 
@@ -136,8 +148,8 @@ def compose_faces(grid, nodes, faces):
     Also, edges are created and linked basing on their presence in grid.Edge.
 
     :param grid: Grid object.
-    :param nodes: list : nodes to connect.
-    :param faces: list : to connect (must be empty).
+    :param nodes: list : nodes to link.
+    :param faces: list : faces to link.
     """
     for f in faces:
         n1 = nodes[f.nodes_ids[0] - 1]
@@ -181,7 +193,20 @@ def compose_faces(grid, nodes, faces):
             grid.link_face_and_edge(f, e)
 
 
-def parce_nodes(lines):
+def parce_nodes_and_faces(lines):
+    """
+    Parce node and faces from tecplot file.
+
+    Creates list of nodes and list of faces.
+    Set the x, y coordinates of nodes.
+
+    Add list of nodes' ids to each face.
+
+    :param lines: tecplot lines representing the
+    value and connectivity lists.
+
+    :return: tuple (list, list): nodes and faces for a zone.
+    """
     # Read all nodes of zone 1.
     # x coords.
     xs = map(float, lines[0].split(' ')[:-1])
