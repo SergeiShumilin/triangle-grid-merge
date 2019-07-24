@@ -1,8 +1,8 @@
 """Module describes triangular grid."""
-from node import Node
-from edge import Edge
-from face import Face
-from zone import Zone
+from .node import Node
+from .edge import Edge
+from .face import Face
+from .zone import Zone
 from math import fabs
 
 
