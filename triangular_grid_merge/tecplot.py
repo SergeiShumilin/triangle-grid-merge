@@ -76,7 +76,7 @@ def read_tecplot(grid, filename):
     :param grid: Grid object.
     :param filename: file to read from.
     """
-    file_with_grid = open('grids/{}'.format(filename), 'r')
+    file_with_grid = open(filename, 'r')
 
     lines = file_with_grid.readlines()
 
@@ -304,7 +304,7 @@ def print_tecplot_header(filename):
 
     :param filename: file to write in.
     """
-    with open('grids/{}'.format(filename), 'w') as f:
+    with open(filename, 'w') as f:
         f.write('TITLE = "GRID"\n')
         f.write('VARIABLES = "X", "Y"\n')
 
@@ -318,7 +318,7 @@ def print_zone_header(filename, zone_name, nodes, faces):
     :param nodes: nodes.
     :param faces: faces.
     """
-    with open('grids/{}'.format(filename), 'a+') as f:
+    with open(filename, 'a+') as f:
         f.write('ZONE T = "{}"\n'.format(zone_name))
         f.write('NODES = {}\n'.format((len(nodes))))
         f.write('ELEMENTS = {}\n'.format((len(faces))))
@@ -333,7 +333,7 @@ def print_variables(filename, nodes):
     :param filename: file to write in.
     :param nodes: nodes containing values.
     """
-    with open('grids/{}'.format(filename), 'a+') as f:
+    with open(filename, 'a+') as f:
         # Variables' values.
         for node in nodes:
             f.write(str(node.x) + ' ')
@@ -352,7 +352,7 @@ def print_connectivity_list(filename, nodes, faces):
     :param filename: file to write in.
     :param faces: faces with nodes.
     """
-    with open('grids/{}'.format(filename), 'a+') as f:
+    with open(filename, 'a+') as f:
         # Connectivity list.
         for face in faces:
             for node in face.nodes:

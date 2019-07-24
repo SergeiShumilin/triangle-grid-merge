@@ -1,0 +1,1 @@
+name = 'triangular grid merge'
