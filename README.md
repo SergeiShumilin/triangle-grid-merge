@@ -10,6 +10,11 @@
 
 4. Able to merge multizone grids and write them as a single grid.
 
+## How to install
+```
+pip install triangular-grid-merge
+```
+
 **The main advantage is that with tgm it's easy to read tecplot (.dat) format with multizone triangular grid inside and
 connect zones basing on the coordinates of the nodes.**
 
