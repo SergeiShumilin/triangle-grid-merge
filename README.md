@@ -10,6 +10,11 @@
 
 4. Able to merge multizone grids and write them as a single grid.
 
+## How to install
+```
+pip install triangular-grid-merge
+```
+
 **The main advantage is that with tgm it's easy to read tecplot (.dat) format with multizone triangular grid inside and
 connect zones basing on the coordinates of the nodes.**
 
@@ -53,4 +58,13 @@ Triangular grid is the one where each face is set by three nodes.
 It consists of nodes, faces and edges.
 ![grid_view](docs/grid_view.png)
 
+### How nodes grom multiple grids are combined into single grid node list
 
+1. All nodes from zone 1 are copied into grid.Nodes.
+
+2. Nodes from other zones are consistentely compared with nodes from grid.Nodes
+by x, y coordinates and if the correspondence is found, the new node starts to 
+point to the object of the node in grid.Nodes.
+
+Now only one algorithm is used, but other more rapid methods for finding the nodes
+are in progress.
