@@ -209,6 +209,8 @@ class Grid:
         :param n: node.
         :param f: face.
         """
+        if len(f.nodes) == 3:
+            raise Exception('The face is linked to the maximum number of nodes.')
         n.faces.append(f)
         f.nodes.append(n)
 
@@ -219,6 +221,8 @@ class Grid:
         :param n: node.
         :param e: edge.
         """
+        if len(e.nodes) == 3:
+            raise Exception('The edge is linked to the maximum number of nodes.')
         n.edges.append(e)
         e.nodes.append(n)
 
@@ -229,6 +233,8 @@ class Grid:
         :param f: face.
         :param e: edge.
         """
+        if len(e.faces) == 2:
+            raise Exception('The edge is linked to the maximum number of faces.')
         f.edges.append(e)
         e.faces.append(f)
 
@@ -262,18 +268,15 @@ class Grid:
         """
         return 2 * (xn - 1) * (yn - 1)
 
-    def is_edge_present(self, n1, n2):
+    def is_edge_present(self, n1: Node, n2: Node):
         """
         Whether the `grid.Edges` contains the edge with nodes n1 and n2.
         :param n1: node 1.
         :param n2: node 2.
         :return: id of the edge if present and None if not.
         """
-        for edge in self.Edges:
+        for edge in n1.edges:
+            if edge in n2.edges:
+                return edge
 
-            if len(edge.nodes) > 0:
-                cond1 = edge.nodes[0] == n1 and edge.nodes[1] == n2
-                cond2 = edge.nodes[0] == n2 and edge.nodes[1] == n1
-                if cond1 or cond2:
-                    return edge
         return None
