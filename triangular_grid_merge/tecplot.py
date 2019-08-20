@@ -6,10 +6,7 @@ from .face import Face
 from .edge import Edge
 from .grid import Grid
 from .zone import Zone
-from math import fabs
-
-# Accuracy to compare nodes' coordinates.
-EPS = 10e-5
+from .node_algorithms import ranging_algorithm
 
 
 def print_tecplot(grid, filename, merge=False):
@@ -131,11 +128,8 @@ def set_nodes(grid, nodes):
     :param grid: Grid object.
     :param nodes: list of lists of nodes for each zone.
     """
-    # Copy all nodes from zone 1 to the grid.
-    grid.Nodes = [node for node in nodes[0]]
-
-    for n in nodes[1:]:
-        compose_node_list_algorithm_1(grid, n)
+    for n in nodes:
+        ranging_algorithm(grid, n)
 
 
 def set_faces(grid, nodes, faces):
@@ -236,35 +230,6 @@ def parce_nodes_and_faces(lines):
         faces.append(f)
 
     return nodes, faces
-
-
-def compose_node_list_algorithm_1(grid, nodes_z2):
-    """
-    Compose grid.Nodes from the nodes from two zones to avoid repeating.
-
-    The nodes are compared according to their coordinates (x, y).
-    The algorithm does simple n^2 search through all nodes.
-
-    :param grid: Grid object.
-    :param nodes_z2: list: nodes of zone 2.
-    """
-    for i in range(len(nodes_z2)):
-
-        node_is_found = False
-
-        for j in range(len(grid.Nodes)):
-
-            # Compare coordinates.
-            cond1 = fabs(grid.Nodes[j].x - nodes_z2[i].x) <= EPS
-            cond2 = fabs(grid.Nodes[j].y - nodes_z2[i].y) <= EPS
-
-            if cond1 and cond2:
-                nodes_z2[i] = grid.Nodes[j]
-                node_is_found = True
-                break
-
-        if not node_is_found:
-            grid.Nodes.append(nodes_z2[i])
 
 
 def number_of_zones(file):
