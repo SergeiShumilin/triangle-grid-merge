@@ -6,7 +6,7 @@ from .face import Face
 from .edge import Edge
 from .grid import Grid
 from .zone import Zone
-from .node_algorithms import ranging_algorithm
+from .node_algorithms import n_square, dichotomy_1_sided, dichotomy_2_sided
 
 
 def print_tecplot(grid, filename, merge=False):
@@ -66,13 +66,26 @@ def print_merged_grid(grid, filename):
     print_connectivity_list(filename, grid.Nodes, grid.Faces)
 
 
-def read_tecplot(grid, filename):
+def read_tecplot(grid, filename, algorithm='dichotomy_2_sided'):
     """
     Read tecplot file.
 
     :param grid: Grid object.
     :param filename: file to read from.
+    :param algorithm: algorithm to compare nodes' coordinates when merging zones.
+
+    `n_square` given a node searches for it by trivial element by element search.
+
+    `dichotomy_2_sided` given a node uses dichotomy to locate a node with equal x-coordinate and
+    continues to compare y-coordinate of neighbor elements with equal x-coordinates in two directions.
+
+    `dichotomy_1_sided` given a node uses dichotomy to locate a node with equal x-coordinate and which stays first
+    of all nodes with equal x-coordinate when the algorithm continues to compare y-coordinate of neighbor elements
+    with equal x-coordinates in one directions (to the right).
     """
+    if algorithm not in ['n_square', 'dichotomy_1_sided', 'dichotomy_2_sided']:
+        raise Exception('Wrong name for algorithm')
+
     file_with_grid = open(filename, 'r')
 
     lines = file_with_grid.readlines()
@@ -111,7 +124,7 @@ def read_tecplot(grid, filename):
         z.Nodes = parces_nodes
         z.Faces = parces_faces
 
-    set_nodes(grid, nodes)
+    set_nodes(grid, nodes, algorithm)
 
     for f, n in zip(faces, nodes):
         set_faces(grid, n, f)
@@ -121,15 +134,21 @@ def read_tecplot(grid, filename):
     grid.init_ids()
 
 
-def set_nodes(grid, nodes):
+def set_nodes(grid, nodes, algorithm):
     """
     Fill grid.Nodes list with unique nodes from each zone.
 
     :param grid: Grid object.
     :param nodes: list of lists of nodes for each zone.
+    :param algorithm: algorithm to merge nodes from multiple zones.
     """
     for n in nodes:
-        ranging_algorithm(grid, n)
+        if algorithm == 'n_square':
+            n_square(grid, n)
+        if algorithm == 'dichotomy_1_sided':
+            dichotomy_1_sided(grid, n)
+        if algorithm == 'dichotomy_2_sided':
+            dichotomy_2_sided(grid, n)
 
 
 def set_faces(grid, nodes, faces):
